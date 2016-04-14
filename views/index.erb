@@ -21,7 +21,7 @@
     <h1>Hello, Kafka</h1>
     <p>This page shows the last 10 messages sent to Kafka on the "messages" topic.</p>
     <p>To send a message, simply curl the endpoint of this app:</p>
-    <pre>curl -X POST https://heroku-kafka-demo-ruby.herokuapp.com/messages -d 'message1'</pre>
+    <pre>curl -X POST <%= request.base_url %>/messages -d 'message1'</pre>
     <table class="messages table">
     </table>
 
