@@ -54,7 +54,7 @@ def start_consumer
     begin
       $consumer.each_message do |message|
         $recent_messages << message
-        $recent_message.shift
+        $recent_messages.shift if $recent_messages.length > 10
         puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset} recent_offsets=#{$recent_messages.map(&:offset).join(',')}"
       end
     rescue => e
