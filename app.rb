@@ -51,7 +51,7 @@ def start_consumer
       $consumer.each_message do |message|
         RECENT_MESSAGES << message
         RECENT_MESSAGES.sort_by! {|m| -message.offset}
-        RECENT_MESSAGES.take(10)
+        RECENT_MESSAGES.take!(10)
         puts "consumer received message! local message count: #{RECENT_MESSAGES.size}"
       end
     rescue => e
