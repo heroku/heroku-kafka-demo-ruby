@@ -27,6 +27,7 @@ get '/' do
 end
 
 get '/messages' do
+  content_type :json
   $recent_messages.map do |message, metadata|
     {
       partition: message.partition,
