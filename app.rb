@@ -62,6 +62,7 @@ end
 Thread.new do
   ActiveSupport::Notifications.subscribe(/.*\.kafka$/) do |*args|
     event = ActiveSupport::Notifications::Event.new(*args)
-    puts "Received kafka notification `#{event.name}` with payload: #{event.payload.inspect}"
+    formatted = event.payload.map {|k,v| "#{k}=#{v}"}.join(' ')
+    puts "at=#{event.name} #{formatted}"
   end
 end
