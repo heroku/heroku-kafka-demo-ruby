@@ -15,6 +15,7 @@ def initialize_kafka
   )
   $producer = $kafka.async_producer(delivery_interval: 1)
   $consumer = $kafka.consumer(group_id: GROUP_ID)
+  start_consumer
 end
 
 RECENT_MESSAGES = []
@@ -43,19 +44,19 @@ post '/messages' do
   end
 end
 
-# For the purposes of this demo, just run the consumer inside the web dyno.
-# In a real app, this would be in a separate process.
-Thread.new do
-  $consumer.subscribe(KAFKA_TOPIC)
-  begin
-    $consumer.each_message do |message|
-      RECENT_MESSAGES << message
-      RECENT_MESSAGES.sort_by! {|m| -message.offset}
-      RECENT_MESSAGES.take(10)
-      puts "consumer received message! local message count: #{RECENT_MESSAGES.size}"
+def start_consumer
+  Thread.new do
+    $consumer.subscribe(KAFKA_TOPIC)
+    begin
+      $consumer.each_message do |message|
+        RECENT_MESSAGES << message
+        RECENT_MESSAGES.sort_by! {|m| -message.offset}
+        RECENT_MESSAGES.take(10)
+        puts "consumer received message! local message count: #{RECENT_MESSAGES.size}"
+      end
+    rescue => e
+      puts "#{e}\n#{e.backtrace.join("\n")}"
     end
-  rescue => e
-    puts "#{e}\n#{e.backtrace.join("\n")}"
   end
 end
 
