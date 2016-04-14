@@ -28,7 +28,7 @@ end
 
 get '/messages' do
   $recent_messages.map do |message|
-    message.value
+    "partition=#{message.partition} offset=#{message.offset} message=#{message.value}"
   end.to_json
 end
 
