@@ -10,6 +10,7 @@ GEM
     i18n (0.7.0)
     json (1.8.3)
     minitest (5.8.3)
+    puma (2.14.0)
     rack (1.6.4)
     rack-protection (1.5.3)
       rack
@@ -28,6 +29,7 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport
+  puma
   ruby-kafka
   sinatra
 
