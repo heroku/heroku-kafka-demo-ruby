@@ -6,7 +6,7 @@ function fetchMessages() {
   $.ajax({
     dataType: 'json',
     url: "/messages",
-    success: function (data) {
+    complete: function (data) {
       var ul = $('.messages');
       ul.empty();
       for (var i = 0; i < data.length; ++i) {
