@@ -54,9 +54,8 @@ def start_consumer
     begin
       $consumer.each_message do |message|
         $recent_messages << message
-        $recent_messages.sort_by! {|m| -message.offset}
-        $recent_messages = $recent_messages.take(10)
-        puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset}"
+        $recent_message.shift
+        puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset} recent_offsets=#{$recent_messages.map(&:offset).join(',')}"
       end
     rescue => e
       puts "#{e}\n#{e.backtrace.join("\n")}"
