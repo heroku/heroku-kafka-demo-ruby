@@ -7,10 +7,12 @@ function fetchMessages() {
     dataType: 'json',
     url: "/messages",
     complete: function (data) {
-      var ul = $('.messages');
-      ul.empty();
+      var table = $('.messages');
+      table.empty();
+      table.append('<tr><td>Offset</td><td>Partition</td><td>Message</td></tr>')
       for (var i = 0; i < data.responseJSON.length; ++i) {
-        ul.append("<li>" + data.responseJSON[i] + "</li>");
+        var message = data.responseJSON.length[i]
+        table.append('<tr><td>' + message.offset + '</td><td>' + message.partition + '</td><td>' + message.value + '</td></tr>')
       }
       setTimeout(function () {
         fetchMessages();
