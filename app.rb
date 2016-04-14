@@ -12,7 +12,7 @@ KAFKA = Kafka.new(
   ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
   ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
 )
-PRODUCER = KAFKA.async_producer
+PRODUCER = KAFKA.async_producer(delivery_interval: 1)
 CONSUMER = KAFKA.consumer(group_id: GROUP_ID)
 
 RECENT_MESSAGES = []
@@ -30,8 +30,15 @@ get '/messages' do
 end
 
 post '/messages' do
-  PRODUCER.produce(body, topic: KAFKA_TOPIC)
-  "received_message"
+  if request.body.size > 0
+    request.body.rewind
+    message = request.body.read
+    PRODUCER.produce(message, topic: KAFKA_TOPIC)
+    "received_message"
+  else
+    status 400
+    "message was empty"
+  end
 end
 
 # For the purposes of this demo, just run the consumer inside the web dyno.
