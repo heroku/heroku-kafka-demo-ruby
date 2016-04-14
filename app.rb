@@ -30,6 +30,7 @@ end
 
 post '/messages' do
   PRODUCER.produce(body, topic: KAFKA_TOPIC)
+  "received_message"
 end
 
 # For the purposes of this demo, just run the consumer inside the web dyno.
