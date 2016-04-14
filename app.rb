@@ -35,10 +35,15 @@ end
 # For the purposes of this demo, just run the consumer inside the web dyno.
 # In a real app, this would be in a separate process.
 Thread.new do
-  CONSUMER.each_message do |message|
-    RECENT_MESSAGES << message
-    RECENT_MESSAGES.sort_by! {|m| -message.offset}
-    RECENT_MESSAGES.take(10)
-    puts "received message!"
+  CONSUMER.subscribe(KAFKA_TOPIC)
+  begin
+    CONSUMER.each_message do |message|
+      RECENT_MESSAGES << message
+      RECENT_MESSAGES.sort_by! {|m| -message.offset}
+      RECENT_MESSAGES.take(10)
+      puts "received message!"
+    end
+  rescue => e
+    puts "#{e}\n#{e.backtrace.join("\n")}"
   end
 end
