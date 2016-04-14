@@ -6,18 +6,20 @@ require 'active_support/notifications'
 KAFKA_TOPIC = "messages"
 GROUP_ID = 'heroku-kafka-demo'
 
-KAFKA = Kafka.new(
-  seed_brokers: ENV.fetch("KAFKA_URL"),
-  ssl_ca_cert: ENV.fetch("KAFKA_TRUSTED_CERT"),
-  ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
-  ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
-)
-PRODUCER = KAFKA.async_producer(delivery_interval: 1)
-CONSUMER = KAFKA.consumer(group_id: GROUP_ID)
+def initialize_kafka
+  $kafka = Kafka.new(
+    seed_brokers: ENV.fetch("KAFKA_URL"),
+    ssl_ca_cert: ENV.fetch("KAFKA_TRUSTED_CERT"),
+    ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
+    ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
+  )
+  $producer = $kafka.async_producer(delivery_interval: 1)
+  $consumer = $kafka.consumer(group_id: GROUP_ID)
+end
 
 RECENT_MESSAGES = []
 
-at_exit { PRODUCER.shutdown }
+at_exit { $producer.shutdown }
 
 get '/' do
   erb :index
@@ -33,7 +35,7 @@ post '/messages' do
   if request.body.size > 0
     request.body.rewind
     message = request.body.read
-    PRODUCER.produce(message, topic: KAFKA_TOPIC)
+    $producer.produce(message, topic: KAFKA_TOPIC)
     "received_message"
   else
     status 400
@@ -44,9 +46,9 @@ end
 # For the purposes of this demo, just run the consumer inside the web dyno.
 # In a real app, this would be in a separate process.
 Thread.new do
-  CONSUMER.subscribe(KAFKA_TOPIC)
+  $consumer.subscribe(KAFKA_TOPIC)
   begin
-    CONSUMER.each_message do |message|
+    $consumer.each_message do |message|
       RECENT_MESSAGES << message
       RECENT_MESSAGES.sort_by! {|m| -message.offset}
       RECENT_MESSAGES.take(10)
