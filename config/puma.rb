@@ -1,5 +1,5 @@
-workers Integer(ENV['WEB_CONCURRENCY'] || 1)
-threads 1, 1 # until we've confirmed Poseidon is thread safe
+workers 1
+threads 1, 1
 
 preload_app!
 
