@@ -8,7 +8,7 @@ function fetchMessages() {
     url: "/messages",
     success: function (data) {
       var ul = $('.messages');
-      node.empty();
+      ul.empty();
       for (var i = 0; i < data.length; ++i) {
         ul.append("<li>" + data + "</li>");
       }
