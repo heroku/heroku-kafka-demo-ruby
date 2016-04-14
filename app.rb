@@ -27,11 +27,12 @@ get '/' do
 end
 
 get '/messages' do
-  $recent_messages.map do |message|
+  $recent_messages.map do |message, metadata|
     {
       partition: message.partition,
       offset: message.offset,
-      value: message.value
+      value: message.value,
+      metadata: metadata
     }
   end.to_json
 end
@@ -53,9 +54,9 @@ def start_consumer
     $consumer.subscribe(KAFKA_TOPIC)
     begin
       $consumer.each_message do |message|
-        $recent_messages << message
+        $recent_messages << [message, {received_at: Time.now.iso8601}]
         $recent_messages.shift if $recent_messages.length > 10
-        puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset} recent_offsets=#{$recent_messages.map(&:offset).join(',')}"
+        puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset}"
       end
     rescue => e
       puts "#{e}\n#{e.backtrace.join("\n")}"
