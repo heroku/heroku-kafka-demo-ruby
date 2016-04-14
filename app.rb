@@ -1,6 +1,7 @@
 require 'kafka'
 require 'sinatra'
 require 'json'
+require 'active_support/notifications'
 
 KAFKA_TOPIC = "messages"
 GROUP_ID = 'heroku-kafka-demo'
@@ -46,5 +47,12 @@ Thread.new do
     end
   rescue => e
     puts "#{e}\n#{e.backtrace.join("\n")}"
+  end
+end
+
+Thread.new do
+  ActiveSupport::Notifications.subscribe(/.*\.kafka$/) do |*args|
+    event = ActiveSupport::Notifications::Event.new(*args)
+    puts "Received kafka notification `#{event.name}` with payload: #{event.payload.inspect}"
   end
 end
