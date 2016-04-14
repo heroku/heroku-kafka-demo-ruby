@@ -1,5 +1,6 @@
 require 'kafka'
 require 'sinatra'
+require 'json'
 
 KAFKA_TOPIC = "messages"
 GROUP_ID = 'heroku-kafka-demo'
