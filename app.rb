@@ -28,7 +28,11 @@ end
 
 get '/messages' do
   $recent_messages.map do |message|
-    "partition=#{message.partition} offset=#{message.offset} message=#{message.value}"
+    {
+      partition: message.partition,
+      offset: message.offset,
+      value: message.value
+    }
   end.to_json
 end
 
@@ -52,7 +56,7 @@ def start_consumer
         $recent_messages << message
         $recent_messages.sort_by! {|m| -message.offset}
         $recent_messages = $recent_messages.take(10)
-        puts "consumer received message! local message count: #{$recent_messages.size}"
+        puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset}"
       end
     rescue => e
       puts "#{e}\n#{e.backtrace.join("\n")}"
