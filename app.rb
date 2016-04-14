@@ -16,11 +16,11 @@ def initialize_kafka
   $producer = $kafka.async_producer(delivery_interval: 1)
   $consumer = $kafka.consumer(group_id: GROUP_ID)
   start_consumer
+
+  at_exit { $producer.shutdown }
 end
 
 RECENT_MESSAGES = []
-
-at_exit { $producer.shutdown }
 
 get '/' do
   erb :index
