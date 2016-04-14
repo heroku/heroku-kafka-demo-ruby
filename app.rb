@@ -17,6 +17,7 @@ def initialize_kafka
   $consumer = $kafka.consumer(group_id: GROUP_ID)
   $recent_messages = []
   start_consumer
+  start_metrics
 
   at_exit { $producer.shutdown }
 end
@@ -59,10 +60,12 @@ def start_consumer
   end
 end
 
-Thread.new do
-  ActiveSupport::Notifications.subscribe(/.*\.kafka$/) do |*args|
-    event = ActiveSupport::Notifications::Event.new(*args)
-    formatted = event.payload.map {|k,v| "#{k}=#{v}"}.join(' ')
-    puts "at=#{event.name} #{formatted}"
+def start_metrics
+  Thread.new do
+    ActiveSupport::Notifications.subscribe(/.*\.kafka$/) do |*args|
+      event = ActiveSupport::Notifications::Event.new(*args)
+      formatted = event.payload.map {|k,v| "#{k}=#{v}"}.join(' ')
+      puts "at=#{event.name} #{formatted}"
+    end
   end
 end
