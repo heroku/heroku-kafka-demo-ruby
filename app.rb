@@ -37,7 +37,7 @@ post '/messages' do
     request.body.rewind
     message = request.body.read
     $producer.produce(message, topic: KAFKA_TOPIC)
-    "received_message"
+    "received_message: #{message}"
   else
     status 400
     "message was empty"
