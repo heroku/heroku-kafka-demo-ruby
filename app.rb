@@ -59,8 +59,10 @@ def start_consumer
         $recent_messages.shift if $recent_messages.length > 10
         puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset}"
       end
-    rescue => e
+    rescue Exception => e
+      puts "CONSUMER ERROR"
       puts "#{e}\n#{e.backtrace.join("\n")}"
+      exit(1)
     end
   end
 end
