@@ -39,5 +39,6 @@ Thread.new do
     RECENT_MESSAGES << message
     RECENT_MESSAGES.sort_by! {|m| -message.offset}
     RECENT_MESSAGES.take(10)
+    puts "received message!"
   end
 end
