@@ -15,19 +15,18 @@ def initialize_kafka
   )
   $producer = $kafka.async_producer(delivery_interval: 1)
   $consumer = $kafka.consumer(group_id: GROUP_ID)
+  $recent_messages = []
   start_consumer
 
   at_exit { $producer.shutdown }
 end
-
-RECENT_MESSAGES = []
 
 get '/' do
   erb :index
 end
 
 get '/messages' do
-  RECENT_MESSAGES.map do |message|
+  $recent_messages.map do |message|
     message.value
   end.to_json
 end
@@ -49,10 +48,10 @@ def start_consumer
     $consumer.subscribe(KAFKA_TOPIC)
     begin
       $consumer.each_message do |message|
-        RECENT_MESSAGES << message
-        RECENT_MESSAGES.sort_by! {|m| -message.offset}
-        RECENT_MESSAGES.take!(10)
-        puts "consumer received message! local message count: #{RECENT_MESSAGES.size}"
+        $recent_messages << message
+        $recent_messages.sort_by! {|m| -message.offset}
+        $recent_messages = $recent_messages.take(10)
+        puts "consumer received message! local message count: #{$recent_messages.size}"
       end
     rescue => e
       puts "#{e}\n#{e.backtrace.join("\n")}"
