@@ -7,14 +7,20 @@ KAFKA_TOPIC = "messages"
 GROUP_ID = 'heroku-kafka-demo'
 
 def initialize_kafka
-  $kafka = Kafka.new(
+  producer_kafka = Kafka.new(
     seed_brokers: ENV.fetch("KAFKA_URL"),
     ssl_ca_cert: ENV.fetch("KAFKA_TRUSTED_CERT"),
     ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
     ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
   )
-  $producer = $kafka.async_producer(delivery_interval: 1)
-  $consumer = $kafka.consumer(group_id: GROUP_ID)
+  $producer = producer_kafka.async_producer(delivery_interval: 1)
+  consumer_kafka = Kafka.new(
+    seed_brokers: ENV.fetch("KAFKA_URL"),
+    ssl_ca_cert: ENV.fetch("KAFKA_TRUSTED_CERT"),
+    ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
+    ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
+  )
+  $consumer = consumer_kafka.consumer(group_id: GROUP_ID)
   $recent_messages = []
   start_consumer
   start_metrics
