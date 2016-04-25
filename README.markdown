@@ -7,14 +7,6 @@ You'll need to [provision](#provisioning) the app.
 
 ## Provisioning
 
-The easiest way to provision an instance of this drain is to click the following
-button.  That will provision a new Kafka cluster, then provision a new drain
-that points at it, protected by a randomly generated password.
-
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/heroku/heroku-kafka-demo-ruby)
-
-Alternatively you can set it up manually:
-
 Install the kafka cli plugin:
 
 ```
