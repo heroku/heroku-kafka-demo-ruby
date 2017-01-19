@@ -3,8 +3,12 @@ require 'sinatra'
 require 'json'
 require 'active_support/notifications'
 
-KAFKA_TOPIC = "messages"
-GROUP_ID = 'heroku-kafka-demo'
+KAFKA_TOPIC = ENV.fetch("KAFKA_TOPIC", "messages")
+GROUP_ID = ENV.fetch("KAFKA_CONSUMER_GROUP", "heroku-kafka-demo")
+
+def with_prefix(name)
+  "#{ENV["KAFKA_PREFIX"]}#{name}"
+end
 
 def initialize_kafka
   # This demo app connects to kafka on multiple threads.
@@ -30,7 +34,7 @@ def initialize_kafka
   # For the demo app, there's only one group, but a production app
   # could use separate groups for e.g. processing events and archiving
   # raw events to S3 for longer term storage
-  $consumer = consumer_kafka.consumer(group_id: GROUP_ID)
+  $consumer = consumer_kafka.consumer(group_id: with_prefix(GROUP_ID))
   $recent_messages = []
   start_consumer
   start_metrics
@@ -63,7 +67,7 @@ post '/messages' do
   if request.body.size > 0
     request.body.rewind
     message = request.body.read
-    $producer.produce(message, topic: KAFKA_TOPIC)
+    $producer.produce(message, topic: with_prefix(KAFKA_TOPIC))
     "received_message: #{message}"
   else
     status 400
@@ -79,7 +83,7 @@ end
 # processes, and the web API will return reads from arbitrary workers, which will be incorrect.
 def start_consumer
   Thread.new do
-    $consumer.subscribe(KAFKA_TOPIC)
+    $consumer.subscribe(with_prefix(KAFKA_TOPIC))
     begin
       $consumer.each_message do |message|
         $recent_messages << [message, {received_at: Time.now.iso8601}]
