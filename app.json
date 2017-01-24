@@ -1,0 +1,16 @@
+{
+  "name": "heroku-kafka-demo-ruby-review",
+  "scripts": {
+    "postdeploy": "heroku kafka:topics:create messages"
+  },
+  "env": {
+  },
+  "formation": {
+  },
+  "addons": [
+    "heroku-kafka"
+  ],
+  "buildpacks": [
+
+  ]
+}
