@@ -1,36 +1,208 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>Welcome to Heroku Kafka</title>
-
-    <!-- Bootstrap -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
+    <title>Apache Kafka on Heroku Demo</title>
+    <link rel="stylesheet" href="https://www.herokucdn.com/purple/1.1.2/purple.min.css">
+    <link rel="icon" href="https://www.herokucdn.com/favicon.ico">
+    <script src="https://npmcdn.com/react@15.3.1/dist/react.min.js"></script>
+    <script src="https://npmcdn.com/react-dom@15.3.1/dist/react-dom.min.js"></script>
+    <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://npmcdn.com/moment@2.14.1"></script>
   </head>
   <body>
-    <h1>Hello, Kafka</h1>
-    <p>This page shows the last 10 messages sent to Kafka on the "messages" topic.</p>
-    <p>To send a message, simply curl the endpoint of this app:</p>
-    <pre>curl -X POST <%= request.base_url %>/messages -d 'message1'</pre>
-    <table class="messages table">
-    </table>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h1>Apache Kafka on Heroku with NodeJS Demo</h1>
+          <div id="app">
+            <div class="spinner">
+              <i class="spinner__dot spinner__dot--one"></i>
+              <i class="spinner__dot spinner__dot--two"></i>
+              <i class="spinner__dot spinner__dot--three"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="js/bootstrap.min.js"></script>
+    <script type="text/babel">
+      const Spinner = React.createClass({
+        render: function () {
+          if (!this.props.show) {
+            return null
+          }
 
-    <!-- app code here -->
-    <script src="js/index.js"></script>
+          return (
+            <div className="spinner">
+              <i className="spinner__dot spinner__dot--one"></i>
+              <i className="spinner__dot spinner__dot--two"></i>
+              <i className="spinner__dot spinner__dot--three"></i>
+            </div>
+          )
+        }
+      })
+
+      const MessageTable = React.createClass({
+        render: function() {
+
+          let tableContent = '';
+
+          if (!this.props.hasFetched) {
+            tableContent = (
+              <tr>
+                <td colSpan="4">Fetching messages...</td>
+              </tr>
+            )
+          }
+
+          if (this.props.hasFetched && this.props.messages.length === 0) {
+            tableContent = (
+              <tr>
+                <td colSpan="4">
+                  <div className="u-padding-Al u-padding-Tm u-text-center">
+                    <h3><small>Messages will appear here</small></h3>
+                    <p>Last 10 messages cached by the Kafka topic consumer.</p>
+                    <p><a href="#" className="btn btn-default" onClick={this.props.onBlankStateAction}>Send a message</a></p>
+                  </div>
+                </td>
+              </tr>
+            )
+          }
+
+          if (this.props.hasFetched && this.props.messages.length > 0) {
+            tableContent = this.props.messages.map((m) => {
+              return (
+                <tr>
+                  <td>{m.offset}</td>
+                  <td>{m.message}</td>
+                  <td>{m.topic}</td>
+                  <td>{m.partition}</td>
+                </tr>
+              )
+            })
+          }
+
+          return (
+            <div>
+              <div className="row">
+              <div className="col-md-6">
+                <h5>Recent Messages <small>Refreshes every 5 seconds <Spinner show={this.props.fetching} /></small></h5>
+              </div>
+              <div className="col-md-6 text-right">
+              <h5>
+
+              </h5>
+              </div>
+              </div>
+              <div className="purple-box u-padding-Am u-padding-Bs u-margin-Bm">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Offset</th>
+                      <th>Message</th>
+                      <th>Topic</th>
+                      <th>Partition</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableContent}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        }
+      })
+
+      const InputForm = React.createClass({
+        getInitialState: function() {
+          return {
+            message: ''
+          }
+        },
+
+        handleMessageChange: function(e) {
+          this.setState({ message: e.target.value })
+        },
+
+        handleSubmit: function(e) {
+          e.preventDefault()
+          const message = this.state.message
+          if (!message) {
+            return
+          }
+
+          axios.post('/messages', { message: message }).then(() => {
+            this.setState({ message: '' })
+          })
+        },
+
+        render: function() {
+          return (
+            <div className="purple-box u-padding-Am u-padding-Bs u-margin-Bm">
+              <form className="form" onSubmit={this.handleSubmit}>
+                <div className="form-group">
+                  <div className="input-group">
+                    <input type="text" ref="inputField" className="form-control" value={this.state.message} onChange={this.handleMessageChange} placeholder="Type a message..." />
+                    <span className="input-group-btn">
+                      <button className="btn btn-primary" type="submit">Send</button>
+                    </span>
+                  </div>
+                </div>
+              </form>
+            </div>
+          )
+        }
+      })
+
+      const App = React.createClass({
+        getInitialState: function() {
+          return {
+            messages: [],
+            hasFetched: false,
+            isInputting: true
+          }
+        },
+
+        componentDidMount: function() {
+          this.fetchMessages()
+        },
+
+        handleBlankStateAction: function (e) {
+          e.preventDefault()
+          this.refs.inputForm.refs.inputField.focus()
+        },
+
+        fetchMessages: function() {
+          this.setState({ fetching: true })
+          axios.get('/messages')
+            .then((response) => {
+              this.setState({
+                messages: response.data,
+                fetching: false,
+                hasFetched: true
+              })
+              setTimeout(this.fetchMessages, 5000)
+            })
+
+            // TODO: handle failure
+        },
+
+        render: function() {
+          return (
+            <div>
+              <InputForm onMessageSaved={this.handleMessageSaved} ref="inputForm" />
+              <MessageTable messages={this.state.messages} fetching={this.state.fetching} hasFetched={this.state.hasFetched} onBlankStateAction={this.handleBlankStateAction} />
+            </div>
+          )
+        }
+      })
+
+      ReactDOM.render(
+        <App />,
+        document.getElementById('app')
+      );
+    </script>
   </body>
 </html>
