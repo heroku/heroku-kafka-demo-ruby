@@ -1,16 +1,20 @@
 {
   "name": "heroku-kafka-demo-ruby-review",
   "scripts": {
-    "postdeploy": "heroku kafka:topics:create messages"
+    "postdeploy": "heroku plugins:install heroku-kafka && heroku kafka:topics:create messages"
   },
   "env": {
+      "HEROKU_API_KEY" : {
+          "description": "a valid heroku api key",
+          "required": true
+      }
   },
   "formation": {
   },
   "addons": [
-    "heroku-kafka"
+    "heroku-kafka:beta-mt-0"
   ],
   "buildpacks": [
-
+      " https://github.com/fletom/heroku-buildpack-heroku-cli.git"
   ]
 }
