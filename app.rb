@@ -52,10 +52,10 @@ get '/messages' do
   content_type :json
   $recent_messages.map do |message, metadata|
     {
-      partition: message.partition,
       offset: message.offset,
-      value: message.value,
-      metadata: metadata
+      partition: message.partition,
+      message: message.value,
+      topic: KAFKA_TOPIC
     }
   end.to_json
 end
@@ -67,7 +67,7 @@ post '/messages' do
   if request.body.size > 0
     request.body.rewind
     message = request.body.read
-    $producer.produce(message, topic: with_prefix(KAFKA_TOPIC))
+    $producer.produce(JSON.parse(message)['message'], topic: with_prefix(KAFKA_TOPIC))
     "received_message: #{message}"
   else
     status 400
