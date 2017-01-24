@@ -21,6 +21,9 @@
   "buildpacks": [
       {
           "url": "https://github.com/fletom/heroku-buildpack-heroku-cli.git"
+      },
+      {
+          "url": "heroku/ruby"
       }
   ]
 }
