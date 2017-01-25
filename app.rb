@@ -87,6 +87,7 @@ def start_consumer
     begin
       $consumer.each_message do |message|
         $recent_messages << [message, {received_at: Time.now.iso8601}]
+        $recent_messages.uniq {|m| [m.offset, m.partition, m.topic] }
         $recent_messages.shift if $recent_messages.length > 10
         puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset}"
       end
