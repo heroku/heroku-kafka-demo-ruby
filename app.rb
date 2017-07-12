@@ -2,6 +2,7 @@ require 'kafka'
 require 'sinatra'
 require 'json'
 require 'active_support/notifications'
+require 'tempfile'
 
 KAFKA_TOPIC = ENV.fetch("KAFKA_TOPIC", "messages")
 GROUP_ID = ENV.fetch("KAFKA_CONSUMER_GROUP", "heroku-kafka-demo")
@@ -11,12 +12,15 @@ def with_prefix(name)
 end
 
 def initialize_kafka
+  tmp_ca_file = Tempfile.new('ca_certs')
+  tmp_ca_file.write(ENV.fetch("KAFKA_TRUSTED_CERT"))
+  tmp_ca_file.close
   # This demo app connects to kafka on multiple threads.
   # Right now ruby-kafka isn't thread safe, so we establish a new client
   # for the consumer and a different one for the consumer.
   producer_kafka = Kafka.new(
     seed_brokers: ENV.fetch("KAFKA_URL"),
-    ssl_ca_cert: ENV.fetch("KAFKA_TRUSTED_CERT"),
+    ssl_ca_cert_file_path: tmp_ca_file.path,
     ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
     ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
   )
@@ -39,7 +43,10 @@ def initialize_kafka
   start_consumer
   start_metrics
 
-  at_exit { $producer.shutdown }
+  at_exit do
+    $producer.shutdown
+    tmp_ca_file.unlink
+  end
 end
 
 get '/' do
