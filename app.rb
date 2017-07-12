@@ -11,19 +11,31 @@ def with_prefix(name)
 end
 
 def initialize_kafka
+  # ruby-kafka supports multiple PEM encoded certificates,
+  # and heroku sometimes provides them in KAFKA_TRUSTED_CERT
+  # However, the mechanism ruby-kafka uses to support this
+  # requires manual cert parsing. Sadly ruby's OpenSSL bindings
+  # don't expose the needed primitives to parse these certs
+  raw_ca_certs = ENV.fetch('KAFKA_TRUSTED_CERT')
+
+  delimiter = "-----END CERTIFICATE-----"
+  ca_certs = raw_ca_certs.strip.split(delimiter).map do |raw|
+    raw.gsub(delimiter, '') + delimiter
+  end
+
   # This demo app connects to kafka on multiple threads.
   # Right now ruby-kafka isn't thread safe, so we establish a new client
   # for the consumer and a different one for the consumer.
   producer_kafka = Kafka.new(
     seed_brokers: ENV.fetch("KAFKA_URL"),
-    ssl_ca_cert: ENV.fetch("KAFKA_TRUSTED_CERT"),
+    ssl_ca_cert: ca_certs,
     ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
     ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
   )
   $producer = producer_kafka.async_producer(delivery_interval: 1)
   consumer_kafka = Kafka.new(
     seed_brokers: ENV.fetch("KAFKA_URL"),
-    ssl_ca_cert: ENV.fetch("KAFKA_TRUSTED_CERT"),
+    ssl_ca_cert: ca_certs,
     ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
     ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
   )
