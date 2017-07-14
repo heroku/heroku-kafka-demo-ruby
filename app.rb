@@ -27,7 +27,7 @@ def initialize_kafka
   $producer = producer_kafka.async_producer(delivery_interval: 1)
   consumer_kafka = Kafka.new(
     seed_brokers: ENV.fetch("KAFKA_URL"),
-    ssl_ca_cert: ENV.fetch("KAFKA_TRUSTED_CERT"),
+    ssl_ca_cert_file_path: tmp_ca_file.path,
     ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
     ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
   )
