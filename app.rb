@@ -1,35 +1,37 @@
+# frozen_string_literal: true
+
 require 'kafka'
 require 'sinatra'
 require 'json'
 require 'active_support/notifications'
 require 'tempfile'
 
-KAFKA_TOPIC = ENV.fetch("KAFKA_TOPIC", "messages")
-GROUP_ID = ENV.fetch("KAFKA_CONSUMER_GROUP", "heroku-kafka-demo")
+KAFKA_TOPIC = ENV.fetch('KAFKA_TOPIC', 'messages')
+GROUP_ID = ENV.fetch('KAFKA_CONSUMER_GROUP', 'heroku-kafka-demo')
 
 def with_prefix(name)
-  "#{ENV["KAFKA_PREFIX"]}#{name}"
+  "#{ENV['KAFKA_PREFIX']}#{name}"
 end
 
 def initialize_kafka
   tmp_ca_file = Tempfile.new('ca_certs')
-  tmp_ca_file.write(ENV.fetch("KAFKA_TRUSTED_CERT"))
+  tmp_ca_file.write(ENV.fetch('KAFKA_TRUSTED_CERT'))
   tmp_ca_file.close
   # This demo app connects to kafka on multiple threads.
   # Right now ruby-kafka isn't thread safe, so we establish a new client
   # for the consumer and a different one for the consumer.
   producer_kafka = Kafka.new(
-    seed_brokers: ENV.fetch("KAFKA_URL"),
+    seed_brokers: ENV.fetch('KAFKA_URL'),
     ssl_ca_cert_file_path: tmp_ca_file.path,
-    ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
-    ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
+    ssl_client_cert: ENV.fetch('KAFKA_CLIENT_CERT'),
+    ssl_client_cert_key: ENV.fetch('KAFKA_CLIENT_CERT_KEY')
   )
   $producer = producer_kafka.async_producer(delivery_interval: 1)
   consumer_kafka = Kafka.new(
-    seed_brokers: ENV.fetch("KAFKA_URL"),
+    seed_brokers: ENV.fetch('KAFKA_URL'),
     ssl_ca_cert_file_path: tmp_ca_file.path,
-    ssl_client_cert: ENV.fetch("KAFKA_CLIENT_CERT"),
-    ssl_client_cert_key: ENV.fetch("KAFKA_CLIENT_CERT_KEY"),
+    ssl_client_cert: ENV.fetch('KAFKA_CLIENT_CERT'),
+    ssl_client_cert_key: ENV.fetch('KAFKA_CLIENT_CERT_KEY')
   )
 
   # Connect a consumer. Consumers in Kafka have a "group" id, which
@@ -59,9 +61,10 @@ get '/messages' do
   content_type :json
   $recent_messages.map do |message, metadata|
     {
-      partition: message.partition,
       offset: message.offset,
-      value: message.value,
+      partition: message.partition,
+      message: message.value,
+      topic: message.topic,
       metadata: metadata
     }
   end.to_json
@@ -71,14 +74,14 @@ end
 # It receives messages as http bodies on /messages,
 # and posts them directly to a Kafka topic.
 post '/messages' do
-  if request.body.size > 0
+  if request.body.size.positive?
     request.body.rewind
     message = request.body.read
     $producer.produce(message, topic: with_prefix(KAFKA_TOPIC))
     "received_message: #{message}"
   else
     status 400
-    "message was empty"
+    body 'message was empty'
   end
 end
 
@@ -86,8 +89,9 @@ end
 # received in memory, so the webapp can send them back over the api.
 #
 # Consumer group management in Kafka means that this app won't work correctly
-# if you run more than one dyno - Kafka will balance out the consumed partitions between
-# processes, and the web API will return reads from arbitrary workers, which will be incorrect.
+# if you run more than one dyno - Kafka will balance out the consumed partition
+# between processes, and the web API will return reads from arbitrary workers,
+# which will be incorrect.
 def start_consumer
   Thread.new do
     $consumer.subscribe(with_prefix(KAFKA_TOPIC))
@@ -98,7 +102,7 @@ def start_consumer
         puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset}"
       end
     rescue Exception => e
-      puts "CONSUMER ERROR"
+      puts 'CONSUMER ERROR'
       puts "#{e}\n#{e.backtrace.join("\n")}"
       exit(1)
     end
@@ -112,7 +116,7 @@ def start_metrics
   Thread.new do
     ActiveSupport::Notifications.subscribe(/.*\.kafka$/) do |*args|
       event = ActiveSupport::Notifications::Event.new(*args)
-      formatted = event.payload.map {|k,v| "#{k}=#{v}"}.join(' ')
+      formatted = event.payload.map { |k, v| "#{k}=#{v}" }.join(' ')
       puts "at=#{event.name} #{formatted}"
     end
   end
