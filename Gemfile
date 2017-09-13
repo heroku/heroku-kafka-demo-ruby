@@ -1,9 +1,9 @@
-# A sample Gemfile
-ruby '2.3.0'
-source "https://rubygems.org"
+# frozen_string_literal: true
 
-gem "sinatra"
-gem 'ruby-kafka', git: 'https://github.com/heroku/ruby-kafka.git',
-  branch: 'support_ca_cert_from_a_file'
-gem "activesupport"
-gem "puma"
+source 'https://rubygems.org'
+ruby '2.4.1'
+
+gem 'activesupport'
+gem 'puma'
+gem 'ruby-kafka'
+gem 'sinatra'

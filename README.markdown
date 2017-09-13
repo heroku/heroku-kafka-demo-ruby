@@ -16,15 +16,16 @@ $ heroku plugins:install heroku-kafka
 Create a heroku app with Kafka attached:
 
 ```
-$ heroku create
-$ heroku addons:create heroku-kafka:beta-dev
-$ heroku kafka:wait
+$ heroku apps:create your-cool-app-name
+$ heroku git:remote -a your-cool-app-name
+$ heroku addons:create heroku-kafka:basic-0
 ```
 
-Create the sample topic, by default the topic will have 32 partitions:
+Create the sample topic and consumer group. By default, the topic will have 8 partitions:
 
 ```
-$ heroku kafka:create messages
+$ heroku kafka:topics:create messages
+$ heroku kafka:consumer-groups:create heroku-kafka-demo
 ```
 
 Deploy to Heroku and open the app:
@@ -32,4 +33,10 @@ Deploy to Heroku and open the app:
 ```
 $ git push heroku master
 $ heroku open
+```
+
+You can send messages via the web UI or the CLI:
+
+```
+curl -X POST `heroku apps:info | awk '/Web URL/ {print $3}'`messages -d 'your-message-text'
 ```
