@@ -31,7 +31,7 @@ $ heroku kafka:consumer-groups:create heroku-kafka-demo
 Deploy to Heroku and open the app:
 
 ```
-$ git push heroku master
+$ git push heroku main
 $ heroku open
 ```
 
