@@ -4,6 +4,6 @@ source 'https://rubygems.org'
 ruby '2.5.6'
 
 gem 'activesupport'
-gem 'puma'
+gem 'puma', '>= 5.6.7'
 gem 'ruby-kafka'
 gem 'sinatra'
