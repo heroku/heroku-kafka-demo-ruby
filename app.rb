@@ -3,7 +3,7 @@
 require 'kafka'
 require 'sinatra'
 require 'json'
-require 'active_support/notifications'
+require 'active_support'
 require 'tempfile'
 
 KAFKA_TOPIC = ENV.fetch('KAFKA_TOPIC', 'messages')
