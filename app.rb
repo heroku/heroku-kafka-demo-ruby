@@ -23,12 +23,19 @@ def initialize_kafka
     :"bootstrap.servers" => ENV.fetch('KAFKA_URL').gsub('kafka+ssl://', ''),
     :"security.protocol" => "ssl",
     :"ssl.ca.location" => tmp_ca_file.path,
+    :"ssl.key.pem" => ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
+    :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
   }).producer
+
+  # ssl.key.pem
+  # ssl.certificate.pem
 
   $consumer = Rdkafka::Config.new({
     :"bootstrap.servers" => ENV.fetch('KAFKA_URL').gsub('kafka+ssl://', ''),
     :"security.protocol" => "ssl",
     :"ssl.ca.location" => tmp_ca_file.path,
+    :"ssl.key.pem" => ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
+    :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
     :"group.id" => with_prefix(GROUP_ID),
   }).consumer
 
