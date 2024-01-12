@@ -84,7 +84,7 @@ post '/messages' do
   if request.body.size.positive?
     request.body.rewind
     message = request.body.read
-    $producer.produce(message, topic: with_prefix(KAFKA_TOPIC))
+    $producer.produce(payload: message, topic: with_prefix(KAFKA_TOPIC))
     "received_message: #{message}"
   else
     status 400
