@@ -19,8 +19,10 @@ GEM
       rake (>= 12.0.0, < 14.0.0)
     drb (2.2.0)
       ruby2_keywords
+    ffi (1.16.3)
     i18n (1.14.1)
       concurrent-ruby (~> 1.0)
+    mini_portile2 (2.8.5)
     minitest (5.21.1)
     mustermann (3.0.0)
       ruby2_keywords (~> 0.0.1)
@@ -33,6 +35,10 @@ GEM
       base64 (>= 0.1.0)
       rack (~> 2.2, >= 2.2.4)
     rake (13.1.0)
+    rdkafka (0.15.0)
+      ffi (~> 1.15)
+      mini_portile2 (~> 2.6)
+      rake (> 12)
     ruby-kafka (1.5.0)
       digest-crc
     ruby2_keywords (0.0.5)
@@ -52,6 +58,7 @@ PLATFORMS
 DEPENDENCIES
   activesupport
   puma
+  rdkafka
   ruby-kafka
   sinatra
 

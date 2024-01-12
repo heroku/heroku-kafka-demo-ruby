@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'kafka'
+require 'rdkafka'
 require 'sinatra'
 require 'json'
 require 'active_support'
