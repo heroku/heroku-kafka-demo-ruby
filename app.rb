@@ -20,6 +20,7 @@ def initialize_kafka
     :"ssl.ca.location" => tmp_ca_file.path,
     :"ssl.key.pem" => ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
     :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
+    :"enable.ssl.certificate.verification" => false,
   }).producer
 
   # Connect a consumer. Consumers in Kafka have a "group" id, which
@@ -34,6 +35,7 @@ def initialize_kafka
     :"ssl.ca.location" => tmp_ca_file.path,
     :"ssl.key.pem" => ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
     :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
+    :"enable.ssl.certificate.verification" => false,
     :"group.id" => GROUP_ID,
   }).consumer
 
