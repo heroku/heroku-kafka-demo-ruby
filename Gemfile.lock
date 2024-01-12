@@ -15,8 +15,6 @@ GEM
     bigdecimal (3.1.5)
     concurrent-ruby (1.2.2)
     connection_pool (2.4.1)
-    digest-crc (0.6.5)
-      rake (>= 12.0.0, < 14.0.0)
     drb (2.2.0)
       ruby2_keywords
     ffi (1.16.3)
@@ -39,8 +37,6 @@ GEM
       ffi (~> 1.15)
       mini_portile2 (~> 2.6)
       rake (> 12)
-    ruby-kafka (1.5.0)
-      digest-crc
     ruby2_keywords (0.0.5)
     sinatra (3.2.0)
       mustermann (~> 3.0)
@@ -59,7 +55,6 @@ DEPENDENCIES
   activesupport
   puma
   rdkafka
-  ruby-kafka
   sinatra
 
 RUBY VERSION

@@ -5,6 +5,5 @@ ruby '3.3.0'
 
 gem 'activesupport'
 gem 'puma'
-gem 'ruby-kafka'
 gem 'rdkafka'
 gem 'sinatra'
