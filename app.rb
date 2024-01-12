@@ -9,10 +9,6 @@ require 'tempfile'
 KAFKA_TOPIC = ENV.fetch('KAFKA_TOPIC', 'messages')
 GROUP_ID = ENV.fetch('KAFKA_CONSUMER_GROUP', 'heroku-kafka-demo')
 
-def with_prefix(name)
-  "#{ENV['KAFKA_PREFIX']}#{name}"
-end
-
 def initialize_kafka
   tmp_ca_file = Tempfile.new('ca_certs')
   tmp_ca_file.write(ENV.fetch('KAFKA_TRUSTED_CERT'))
@@ -26,31 +22,21 @@ def initialize_kafka
     :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
   }).producer
 
-  $consumer = Rdkafka::Config.new({
-    :"bootstrap.servers" => ENV.fetch('KAFKA_URL').gsub('kafka+ssl://', ''),
-    :"security.protocol" => "ssl",
-    :"ssl.ca.location" => tmp_ca_file.path,
-    :"ssl.key.pem" => ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
-    :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
-    :"group.id" => with_prefix(GROUP_ID),
-  }).consumer
-
-#  consumer_kafka = Kafka.new(
-#    seed_brokers: ENV.fetch('KAFKA_URL'),
-#    ssl_ca_cert_file_path: tmp_ca_file.path,
-#    ssl_client_cert: ENV.fetch('KAFKA_CLIENT_CERT'),
-#    ssl_client_cert_key: ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
-#    ssl_verify_hostname: false,
-#  )
-
   # Connect a consumer. Consumers in Kafka have a "group" id, which
   # denotes how consumers balance work. Each group coordinates
   # which partitions to process between its nodes.
   # For the demo app, there's only one group, but a production app
   # could use separate groups for e.g. processing events and archiving
   # raw events to S3 for longer term storage
-  #
-#  $consumer = consumer_kafka.consumer(group_id: with_prefix(GROUP_ID))
+  $consumer = Rdkafka::Config.new({
+    :"bootstrap.servers" => ENV.fetch('KAFKA_URL').gsub('kafka+ssl://', ''),
+    :"security.protocol" => "ssl",
+    :"ssl.ca.location" => tmp_ca_file.path,
+    :"ssl.key.pem" => ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
+    :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
+    :"group.id" => GROUP_ID,
+  }).consumer
+
   $recent_messages = []
   start_consumer
 
@@ -86,7 +72,7 @@ post '/messages' do
   if request.body.size.positive?
     request.body.rewind
     message = request.body.read
-    $producer.produce(payload: message, topic: with_prefix(KAFKA_TOPIC))
+    $producer.produce(payload: message, topic: KAFKA_TOPIC).wait
     "received_message: #{message}"
   else
     status 400
@@ -103,7 +89,7 @@ end
 # which will be incorrect.
 def start_consumer
   Thread.new do
-    $consumer.subscribe(with_prefix(KAFKA_TOPIC))
+    $consumer.subscribe(KAFKA_TOPIC)
     begin
       $consumer.each do |message|
         $recent_messages << [message, {received_at: Time.now.iso8601}]
