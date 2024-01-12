@@ -19,27 +19,26 @@ def initialize_kafka
   tmp_ca_file.write(ENV.fetch('KAFKA_TRUSTED_CERT'))
   tmp_ca_file.close
 
-  # This demo app connects to kafka on multiple threads.
-  # Right now ruby-kafka isn't thread safe, so we establish a new client
-  # for the producer and a different one for the consumer.
-  #
-  producer_kafka = Kafka.new(
-    seed_brokers: ENV.fetch('KAFKA_URL'),
-    ssl_ca_cert_file_path: tmp_ca_file.path,
-    ssl_client_cert: ENV.fetch('KAFKA_CLIENT_CERT'),
-    ssl_client_cert_key: ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
-    ssl_verify_hostname: false,
-  )
+  $producer = Rdkafka::Config.new({
+    :"bootstrap.servers" => ENV.fetch('KAFKA_URL').gsub('kafka+ssl://', ''),
+    :"security.protocol" => "ssl",
+    :"ssl.ca.location" => tmp_ca_file.path,
+  }).producer
 
-  $producer = producer_kafka.async_producer(delivery_interval: 1)
+  $consumer = Rdkafka::Config.new({
+    :"bootstrap.servers" => ENV.fetch('KAFKA_URL').gsub('kafka+ssl://', ''),
+    :"security.protocol" => "ssl",
+    :"ssl.ca.location" => tmp_ca_file.path,
+    :"group.id" => with_prefix(GROUP_ID),
+  }).consumer
 
-  consumer_kafka = Kafka.new(
-    seed_brokers: ENV.fetch('KAFKA_URL'),
-    ssl_ca_cert_file_path: tmp_ca_file.path,
-    ssl_client_cert: ENV.fetch('KAFKA_CLIENT_CERT'),
-    ssl_client_cert_key: ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
-    ssl_verify_hostname: false,
-  )
+#  consumer_kafka = Kafka.new(
+#    seed_brokers: ENV.fetch('KAFKA_URL'),
+#    ssl_ca_cert_file_path: tmp_ca_file.path,
+#    ssl_client_cert: ENV.fetch('KAFKA_CLIENT_CERT'),
+#    ssl_client_cert_key: ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
+#    ssl_verify_hostname: false,
+#  )
 
   # Connect a consumer. Consumers in Kafka have a "group" id, which
   # denotes how consumers balance work. Each group coordinates
@@ -48,13 +47,13 @@ def initialize_kafka
   # could use separate groups for e.g. processing events and archiving
   # raw events to S3 for longer term storage
   #
-  $consumer = consumer_kafka.consumer(group_id: with_prefix(GROUP_ID))
+#  $consumer = consumer_kafka.consumer(group_id: with_prefix(GROUP_ID))
   $recent_messages = []
   start_consumer
   start_metrics
 
   at_exit do
-    $producer.shutdown
+    $producer.close
     tmp_ca_file.unlink
   end
 end
@@ -104,7 +103,7 @@ def start_consumer
   Thread.new do
     $consumer.subscribe(with_prefix(KAFKA_TOPIC))
     begin
-      $consumer.each_message do |message|
+      $consumer.each do |message|
         $recent_messages << [message, {received_at: Time.now.iso8601}]
         $recent_messages.shift if $recent_messages.length > 10
         puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset}"
