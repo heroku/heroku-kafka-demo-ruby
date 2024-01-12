@@ -60,7 +60,7 @@ get '/messages' do
     {
       offset: message.offset,
       partition: message.partition,
-      message: message.value,
+      message: message.payload,
       topic: message.topic,
       metadata: metadata
     }
