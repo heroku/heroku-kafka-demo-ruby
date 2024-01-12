@@ -27,9 +27,6 @@ def initialize_kafka
     :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
   }).producer
 
-  # ssl.key.pem
-  # ssl.certificate.pem
-
   $consumer = Rdkafka::Config.new({
     :"bootstrap.servers" => ENV.fetch('KAFKA_URL').gsub('kafka+ssl://', ''),
     :"security.protocol" => "ssl",
@@ -57,7 +54,6 @@ def initialize_kafka
 #  $consumer = consumer_kafka.consumer(group_id: with_prefix(GROUP_ID))
   $recent_messages = []
   start_consumer
-  start_metrics
 
   at_exit do
     $producer.close
@@ -119,19 +115,6 @@ def start_consumer
       puts 'CONSUMER ERROR'
       puts "#{e}\n#{e.backtrace.join("\n")}"
       exit(1)
-    end
-  end
-end
-
-# ruby-kafka exposes metrics over ActiveSupport::Notifications.
-# This demo app just logs them, but you could send them to librato or
-# another metrics service for graphing.
-def start_metrics
-  Thread.new do
-    ActiveSupport::Notifications.subscribe(/.*\.kafka$/) do |*args|
-      event = ActiveSupport::Notifications::Event.new(*args)
-      formatted = event.payload.map { |k, v| "#{k}=#{v}" }.join(' ')
-      puts "at=#{event.name} #{formatted}"
     end
   end
 end
