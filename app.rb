@@ -9,6 +9,10 @@ require 'tempfile'
 KAFKA_TOPIC = ENV.fetch('KAFKA_TOPIC', 'messages')
 GROUP_ID = ENV.fetch('KAFKA_CONSUMER_GROUP', 'heroku-kafka-demo')
 
+def with_prefix(name)
+  "#{ENV['KAFKA_PREFIX']}#{name}"
+end
+
 def initialize_kafka
   tmp_ca_file = Tempfile.new('ca_certs')
   tmp_ca_file.write(ENV.fetch('KAFKA_TRUSTED_CERT'))
@@ -36,13 +40,14 @@ def initialize_kafka
     :"ssl.key.pem" => ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
     :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
     :"enable.ssl.certificate.verification" => false,
-    :"group.id" => GROUP_ID,
+    :"group.id" => with_prefix(GROUP_ID),
   }).consumer
 
   $recent_messages = []
   start_consumer
 
   at_exit do
+    $producer.flush
     $producer.close
     tmp_ca_file.unlink
   end
@@ -74,7 +79,7 @@ post '/messages' do
   if request.body.size.positive?
     request.body.rewind
     message = request.body.read
-    $producer.produce(payload: message, topic: KAFKA_TOPIC).wait
+    $producer.produce(payload: message, topic: with_prefix(KAFKA_TOPIC)).wait
     "received_message: #{message}"
   else
     status 400
@@ -91,7 +96,7 @@ end
 # which will be incorrect.
 def start_consumer
   Thread.new do
-    $consumer.subscribe(KAFKA_TOPIC)
+    $consumer.subscribe(with_prefix(KAFKA_TOPIC))
     begin
       $consumer.each do |message|
         $recent_messages << [message, {received_at: Time.now.iso8601}]
