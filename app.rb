@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'kafka'
+require 'rdkafka'
 require 'sinatra'
 require 'json'
 require 'active_support'
@@ -18,27 +18,14 @@ def initialize_kafka
   tmp_ca_file.write(ENV.fetch('KAFKA_TRUSTED_CERT'))
   tmp_ca_file.close
 
-  # This demo app connects to kafka on multiple threads.
-  # Right now ruby-kafka isn't thread safe, so we establish a new client
-  # for the producer and a different one for the consumer.
-  #
-  producer_kafka = Kafka.new(
-    seed_brokers: ENV.fetch('KAFKA_URL'),
-    ssl_ca_cert_file_path: tmp_ca_file.path,
-    ssl_client_cert: ENV.fetch('KAFKA_CLIENT_CERT'),
-    ssl_client_cert_key: ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
-    ssl_verify_hostname: false,
-  )
-
-  $producer = producer_kafka.async_producer(delivery_interval: 1)
-
-  consumer_kafka = Kafka.new(
-    seed_brokers: ENV.fetch('KAFKA_URL'),
-    ssl_ca_cert_file_path: tmp_ca_file.path,
-    ssl_client_cert: ENV.fetch('KAFKA_CLIENT_CERT'),
-    ssl_client_cert_key: ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
-    ssl_verify_hostname: false,
-  )
+  $producer = Rdkafka::Config.new({
+    :"bootstrap.servers" => ENV.fetch('KAFKA_URL').gsub('kafka+ssl://', ''),
+    :"security.protocol" => "ssl",
+    :"ssl.ca.location" => tmp_ca_file.path,
+    :"ssl.key.pem" => ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
+    :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
+    :"enable.ssl.certificate.verification" => false,
+  }).producer
 
   # Connect a consumer. Consumers in Kafka have a "group" id, which
   # denotes how consumers balance work. Each group coordinates
@@ -46,14 +33,22 @@ def initialize_kafka
   # For the demo app, there's only one group, but a production app
   # could use separate groups for e.g. processing events and archiving
   # raw events to S3 for longer term storage
-  #
-  $consumer = consumer_kafka.consumer(group_id: with_prefix(GROUP_ID))
+  $consumer = Rdkafka::Config.new({
+    :"bootstrap.servers" => ENV.fetch('KAFKA_URL').gsub('kafka+ssl://', ''),
+    :"security.protocol" => "ssl",
+    :"ssl.ca.location" => tmp_ca_file.path,
+    :"ssl.key.pem" => ENV.fetch('KAFKA_CLIENT_CERT_KEY'),
+    :"ssl.certificate.pem" => ENV.fetch('KAFKA_CLIENT_CERT'),
+    :"enable.ssl.certificate.verification" => false,
+    :"group.id" => with_prefix(GROUP_ID),
+  }).consumer
+
   $recent_messages = []
   start_consumer
-  start_metrics
 
   at_exit do
-    $producer.shutdown
+    $producer.flush
+    $producer.close
     tmp_ca_file.unlink
   end
 end
@@ -70,7 +65,7 @@ get '/messages' do
     {
       offset: message.offset,
       partition: message.partition,
-      message: message.value,
+      message: message.payload,
       topic: message.topic,
       metadata: metadata
     }
@@ -84,7 +79,7 @@ post '/messages' do
   if request.body.size.positive?
     request.body.rewind
     message = request.body.read
-    $producer.produce(message, topic: with_prefix(KAFKA_TOPIC))
+    $producer.produce(payload: message, topic: with_prefix(KAFKA_TOPIC)).wait
     "received_message: #{message}"
   else
     status 400
@@ -103,7 +98,7 @@ def start_consumer
   Thread.new do
     $consumer.subscribe(with_prefix(KAFKA_TOPIC))
     begin
-      $consumer.each_message do |message|
+      $consumer.each do |message|
         $recent_messages << [message, {received_at: Time.now.iso8601}]
         $recent_messages.shift if $recent_messages.length > 10
         puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset}"
@@ -112,19 +107,6 @@ def start_consumer
       puts 'CONSUMER ERROR'
       puts "#{e}\n#{e.backtrace.join("\n")}"
       exit(1)
-    end
-  end
-end
-
-# ruby-kafka exposes metrics over ActiveSupport::Notifications.
-# This demo app just logs them, but you could send them to librato or
-# another metrics service for graphing.
-def start_metrics
-  Thread.new do
-    ActiveSupport::Notifications.subscribe(/.*\.kafka$/) do |*args|
-      event = ActiveSupport::Notifications::Event.new(*args)
-      formatted = event.payload.map { |k, v| "#{k}=#{v}" }.join(' ')
-      puts "at=#{event.name} #{formatted}"
     end
   end
 end
