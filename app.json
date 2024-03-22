@@ -1,6 +1,6 @@
 {
     "name": "Kafka Demo Ruby",
-    "description": "A Kafka Ruby Demo",
+    "description": "Demo showing how to set up Kafka on Heroku, using Ruby",
     "keywords": [
       "Kafka",
       "Ruby",
