@@ -1,0 +1,16 @@
+{
+    "name": "Kafka Demo Ruby",
+    "description": "A Kafka Ruby Demo",
+    "keywords": [
+      "Kafka",
+      "Ruby",
+      "Demo"
+    ],
+    "website": "https://heroku.com/",
+    "success_url": "/",
+    "addons": [
+      {
+        "plan": "heroku-kafka:basic-0"
+      }
+    ]
+  }
