@@ -96,11 +96,10 @@ end
 # which will be incorrect.
 def start_consumer
   Thread.new do
-    $consumer.subscribe(with_prefix(KAFKA_TOPIC))
+    $consumer.subscribe(with_prefix(KAFKA_TOPIC), start_from_beginning: true)
     begin
       $consumer.each do |message|
         $recent_messages << [message, {received_at: Time.now.iso8601}]
-        $recent_messages.shift if $recent_messages.length > 10
         puts "consumer received message! local message count: #{$recent_messages.size} offset=#{message.offset}"
       end
     rescue Exception => e
