@@ -7,5 +7,5 @@ on_worker_boot do
   initialize_kafka
 end
 
-port ENV['PORT'] || 9292
+port(ENV.fetch("PORT") { 3000 }, "::")
 environment ENV['RACK_ENV'] || 'development'
