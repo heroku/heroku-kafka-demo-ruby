@@ -31,7 +31,7 @@ GEM
     mustermann (3.0.4)
       ruby2_keywords (~> 0.0.1)
     nio4r (2.7.4)
-    puma (7.0.2)
+    puma (7.0.4)
       nio4r (~> 2.0)
     rack (3.2.3)
     rack-protection (4.2.1)
