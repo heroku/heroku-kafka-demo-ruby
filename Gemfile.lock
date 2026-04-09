@@ -33,7 +33,7 @@ GEM
       ruby2_keywords (~> 0.0.1)
     nio4r (2.7.5)
     prism (1.9.0)
-    puma (7.2.0)
+    puma (8.0.0)
       nio4r (~> 2.0)
     rack (3.2.6)
     rack-protection (4.2.1)
