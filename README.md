@@ -9,30 +9,29 @@ You'll need to [provision](#provisioning) the app.
 
 Install the kafka cli plugin:
 
-```
-$ heroku plugins:install heroku-kafka
+```shell
+heroku plugins:install heroku-kafka
 ```
 
 Create a heroku app with Kafka attached:
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-
 Create the sample topic and consumer group. By default, the topic will have 8 partitions:
 
-```
-$ heroku kafka:topics:create messages
-$ heroku kafka:consumer-groups:create heroku-kafka-demo
+```shell
+heroku kafka:topics:create messages
+heroku kafka:consumer-groups:create heroku-kafka-demo
 ```
 
 Open the app:
 
-```
-$ heroku open --app=<MY_APP>
+```shell
+heroku open --app=<MY_APP>
 ```
 
 You can send messages via the web UI or the CLI:
 
-```
+```shell
 curl -X POST `heroku apps:info | awk '/Web URL/ {print $3}'`messages -d 'your-message-text'
 ```
