@@ -34,7 +34,7 @@ GEM
     nio4r (2.7.5)
     prism (2.1.0)
     prism (2.1.0-arm64-darwin)
-    puma (8.0.2)
+    puma (8.0.3)
       nio4r (~> 2.0)
     rack (3.2.8)
     rack-protection (4.2.1)
